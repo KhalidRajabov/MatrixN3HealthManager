@@ -1,0 +1,6 @@
+@N3HealthManager_HostAddress = http://localhost:5136
+
+GET {{N3HealthManager_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

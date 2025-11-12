@@ -1,0 +1,22 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "http://b2b-demo.n3health.ru/emk/PixService.svc"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "namespaceMappings": [
+      "*, PixService"
+    ],
+    "references": [
+      "Microsoft.OpenApi, {Microsoft.OpenApi, 1.6.14}",
+      "Swashbuckle.AspNetCore.Swagger, {Swashbuckle.AspNetCore.Swagger, 6.6.2}",
+      "Swashbuckle.AspNetCore.SwaggerGen, {Swashbuckle.AspNetCore.SwaggerGen, 6.6.2}",
+      "Swashbuckle.AspNetCore.SwaggerUI, {Swashbuckle.AspNetCore.SwaggerUI, 6.6.2}"
+    ],
+    "targetFramework": "net8.0",
+    "typeReuseMode": "All"
+  }
+}

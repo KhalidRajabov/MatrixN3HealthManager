@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3HealthManager", "N3HealthManager\N3HealthManager.csproj", "{3350FF19-4F53-47A0-9796-2151B568C385}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3350FF19-4F53-47A0-9796-2151B568C385}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3350FF19-4F53-47A0-9796-2151B568C385}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3350FF19-4F53-47A0-9796-2151B568C385}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3350FF19-4F53-47A0-9796-2151B568C385}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5C37BD32-2BEC-4FC2-AA84-A3C4263063A8}
+	EndGlobalSection
+EndGlobal
