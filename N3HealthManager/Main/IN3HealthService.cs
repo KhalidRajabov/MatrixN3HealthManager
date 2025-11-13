@@ -1,5 +1,6 @@
 ﻿using MatrixN3HealthManager.DTOs;
 using MatrixN3HealthManager.Models;
+using N3HealthManager.DTOs;
 
 namespace MatrixN3HealthManager.Main
 {
@@ -9,7 +10,7 @@ namespace MatrixN3HealthManager.Main
         /// pasient elave etmek ve idsini global goturmek
         /// </summary>
         /// <returns></returns>
-        Task<BaseResponse> AddPatientAndGetId();
+        Task<BaseResponse> AddPatientAndGetId(AddPatientRequestDto addPatientRequestDto);
         /// <summary>
         /// pasient update etmek ve idsini global goturmek
         /// </summary>

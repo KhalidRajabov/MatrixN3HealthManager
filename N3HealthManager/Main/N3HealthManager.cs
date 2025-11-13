@@ -1,6 +1,7 @@
 ﻿using EMKService;
 using MatrixN3HealthManager.DTOs;
 using MatrixN3HealthManager.Models;
+using N3HealthManager.DTOs;
 using PixService;
 using System.Net;
 
@@ -18,67 +19,66 @@ namespace MatrixN3HealthManager.Main
             emkClient = new EmkServiceClient(EmkServiceClient.EndpointConfiguration.BasicHttpBinding_IEmkService);
         }
 
-        public async Task<BaseResponse> AddPatientAndGetId()
+        public async Task<BaseResponse> AddPatientAndGetId(AddPatientRequestDto dto)
         {
-            PatientDto patientDto = new()
+            try
             {
-                FamilyName = "siko",
-                GivenName = "Sakoc",
-                MiddleName = "Sakoci",
-                BirthDate = new DateTime(1987, 1, 10, 10, 38, 1),
-                Sex = (byte)N3Enums.N3Sex.Female,
-                IdPatientMIS = "patient5ssq", //bizim bazadaki idsi
-            };
+                var patientDto = dto.Patient;
 
-            BirthPlaceDto patientBirthPlaceDto = new()
+                var patient = new PatientDto
+                {
+                    FamilyName = patientDto.FamilyName,
+                    GivenName = patientDto.GivenName,
+                    MiddleName = patientDto.MiddleName,
+                    BirthDate = patientDto.BirthDate,
+                    Sex = (byte)patientDto.Sex,
+                    IdPatientMIS = patientDto.IdPatientMIS,
+                    IdGlobal = dto.PatientGlobalId,
+                    BirthPlace = new BirthPlaceDto
+                    {
+                        City = patientDto.BirthPlace.City,
+                        Region = patientDto.BirthPlace.Region,
+                        Country = patientDto.BirthPlace.Country
+                    },
+                    Addresses = patientDto.Addresses.Select(a => new AddressDto
+                    {
+                        Street = a.Street,
+                        Building = a.Building,
+                        Appartment = a.Appartment,
+                        City = a.City,
+                        PostalCode = a.PostalCode,
+                        StringAddress = a.StringAddress,
+                        IdAddressType = (byte)a.AddressType
+                    }).ToArray(),
+                    Contacts = patientDto.Contacts.Select(c => new ContactDto
+                    {
+                        ContactValue = c.ContactValue,
+                        IdContactType = (byte)c.ContactType
+                    }).ToArray(),
+                    Documents = patientDto.Documents.Select(d => new DocumentDto
+                    {
+                        DocN = d.DocN,
+                        DocS = d.DocS,
+                        ProviderName = d.ProviderName,
+                        RegionCode = d.RegionCode,
+                        IdDocumentType = (short)d.DocumentType
+                    }).ToArray()
+                };
+
+                var existingPatient = await pixClient.GetPatientByGlobalIdAsync(dto.ProjectGuid, dto.PatientGlobalId, dto.IdLpu);
+                
+                return new BaseResponse(
+                    HttpStatusCode.OK,
+                    existingPatient != null
+                        ? await pixClient.AddPatientAndGetIdAsync(dto.ProjectGuid, dto.IdLpu, patient)
+                        : await pixClient.UpdatePatientAndGetIdAsync(dto.ProjectGuid, dto.IdLpu, patient)
+                );
+
+            }
+            catch (Exception ex)
             {
-                City = "Санкт-Петербург",
-                Country = "Россия",
-                Region = "Санкт-Петербург"
-            };
-
-            AddressDto patientAddressDto = new()
-            {
-                Appartment = "1000", //menzil nomresi
-                Building = "1", //ev nomresi
-                City = "7800000000000", //sheherin adi
-                IdAddressType = (byte)N3Enums.N3IdAddressType.WorkplacePostalAddress,
-                PostalCode = 125478, //index
-                Street = "78000000000145900", //kuche
-                StringAddress = "125478, Санкт-Петербург, улица Федосеенко, 1, кв 1000" //text sheklinde address
-            };
-
-            ContactDto contactDto = new()
-            {
-                ContactValue = "+78792221111",
-                IdContactType = (byte)N3Enums.N3ContactType.Fax,
-            };
-
-            DocumentDto snil = new()
-            {
-                DocN = "12312312312", //doc nomresi her hansi boshluq ve ya simvol yazmaq olmaz (noqte, tre ve.s.)
-                IdDocumentType = (short)N3Enums.N3IdDocumentType.PensionInsuranceCertificate,
-                ProviderName = "Паспортный стол",
-
-            };
-
-            DocumentDto passport = new()
-            {
-                DocN = "2111", //doc nomresi her hansi boshluq ve ya simvol yazmaq olmaz (noqte, tre ve.s.)
-                DocS = "123111", //seriya nomresi
-                IdDocumentType = (short)N3Enums.N3IdDocumentType.RussianCitizenPassport,
-                ProviderName = "Паспортный стол",
-                RegionCode = "2",
-            };
-
-            patientDto.BirthPlace = patientBirthPlaceDto;
-            patientDto.Addresses = [patientAddressDto];
-            patientDto.Contacts = [contactDto];
-            patientDto.Documents = [snil, passport];
-
-            var result = await pixClient.AddPatientAndGetIdAsync(projectGuid, idLPU, patientDto);
-
-            return new BaseResponse(HttpStatusCode.OK, result);
+                return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, ex.Message);
+            }
         }
         public async Task<BaseResponse> GetPatient()
         {
@@ -132,92 +132,94 @@ namespace MatrixN3HealthManager.Main
         {
             try
             {
+
+                var patient = await pixClient.GetPatientByGlobalIdAsync(dto.ProjectGuid, dto.PatientGlobalId, dto.IDLPU);
+                if (patient == null)
+                    return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, "Patient not found");
+
                 var laboratoryReport = new MedDocument
                 {
                     Attachments = [
-            new MedDocumentDtoDocumentAttachment
-        {
-            Data = Convert.FromBase64String(dto.DataBase64),
-            OrganizationSign = Convert.FromBase64String(dto.OrganizationSignBase64),
-            MimeType = "application/pdf",
-            PersonalSigns = [
-                new MedDocumentDtoPersonalSign
-                {
-                    Sign = Convert.FromBase64String(dto.SignBase64),
-                    Doctor = new ()
+                    new MedDocumentDtoDocumentAttachment
                     {
-                        Person = new ()
-                        {
-                            HumanName = new()
+                        Data = Convert.FromBase64String(dto.DataBase64),
+                        OrganizationSign = Convert.FromBase64String(dto.OrganizationSignBase64),
+                        MimeType = "application/pdf",
+                        PersonalSigns = [
+                            new MedDocumentDtoPersonalSign
                             {
-                                GivenName = dto.DoctorPerson.GivenName,
-                                MiddleName = dto.DoctorPerson.MiddleName,
-                                FamilyName = dto.DoctorPerson.FamilyName
-                            },
-                            Sex = (byte)dto.DoctorPerson.Sex,
-                            Birthdate = dto.DoctorPerson.Birthdate,
-                            IdPersonMis = dto.DoctorPerson.IdPersonMis,
-                            Documents = dto.DoctorPerson.Documents.Select(d => new IdentityDocument()
-                            {
-                                DocN = d.DocN,
-                                DocS = d.DocS,
-                                DocumentName = d.DocumentName,
-                                ExpiredDate = d.ExpiredDate,
-                                IdDocumentType = (byte)d.IdDocumentType,
-                                IdProvider = d.IdProvider,
-                                IssuedDate = d.IssuedDate,
-                                ProviderName = d.ProviderName,
-                                RegionCode = d.RegionCode,
-                                StartDate = d.StartDate
-                            }).ToArray()
-                        },
-                        IdLpu = null,
-                        IdSpeciality = (ushort)N3Enums.N3IdSpeciality.Geriatrics,
-                        IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
+                                Sign = Convert.FromBase64String(dto.SignBase64),
+                                Doctor = new ()
+                                {
+                                    Person = new ()
+                                    {
+                                        HumanName = new()
+                                        {
+                                            GivenName = dto.DoctorPerson.GivenName,
+                                            MiddleName = dto.DoctorPerson.MiddleName,
+                                            FamilyName = dto.DoctorPerson.FamilyName
+                                        },
+                                        Sex = (byte)dto.DoctorPerson.Sex,
+                                        Birthdate = dto.DoctorPerson.Birthdate,
+                                        IdPersonMis = dto.DoctorPerson.IdPersonMis,
+                                        Documents = dto.DoctorPerson.Documents.Select(d => new IdentityDocument()
+                                        {
+                                            DocN = d.DocN,
+                                            DocS = d.DocS,
+                                            DocumentName = d.DocumentName,
+                                            ExpiredDate = d.ExpiredDate,
+                                            IdDocumentType = (byte)d.IdDocumentType,
+                                            IdProvider = d.IdProvider,
+                                            IssuedDate = d.IssuedDate,
+                                            ProviderName = d.ProviderName,
+                                            RegionCode = d.RegionCode,
+                                            StartDate = d.StartDate
+                                        }).ToArray()
+                                    },
+                                    IdLpu = null,
+                                    IdSpeciality = (ushort)N3Enums.N3IdSpeciality.Geriatrics,
+                                    IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
+                                }
+                            }
+                        ]
                     }
-                }
-            ]
-        }
-        ],
-                    Author = new()
-                    {
-                        Person = new()
-                        {
-                            HumanName = new()
-                            {
-                                GivenName = dto.AuthorPerson.GivenName,
-                                MiddleName = dto.AuthorPerson.MiddleName,
-                                FamilyName = dto.AuthorPerson.FamilyName
-                            },
-                            Sex = (byte)dto.AuthorPerson.Sex,
-                            Birthdate = dto.AuthorPerson.Birthdate,
-                            IdPersonMis = dto.AuthorPerson.IdPersonMis,
-                            Documents = dto.AuthorPerson.Documents.Select(d => new IdentityDocument()
-                            {
-                                DocN = d.DocN,
-                                DocS = d.DocS,
-                                DocumentName = d.DocumentName,
-                                ExpiredDate = d.ExpiredDate,
-                                IdDocumentType = (byte)d.IdDocumentType,
-                                IdProvider = d.IdProvider,
-                                IssuedDate = d.IssuedDate,
-                                ProviderName = d.ProviderName,
-                                RegionCode = d.RegionCode,
-                                StartDate = d.StartDate
-                            }).ToArray()
-                        },
-                        IdLpu = null,
-                        IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
-                    },
-                    CreationDate = DateTime.Now,
-                    Header = dto.Header,
-                    IdDocumentMis = dto.IdDocumentMis
-                };
+                    ],
+                                Author = new()
+                                {
+                                    Person = new()
+                                    {
+                                        HumanName = new()
+                                        {
+                                            GivenName = dto.AuthorPerson.GivenName,
+                                            MiddleName = dto.AuthorPerson.MiddleName,
+                                            FamilyName = dto.AuthorPerson.FamilyName
+                                        },
+                                        Sex = (byte)dto.AuthorPerson.Sex,
+                                        Birthdate = dto.AuthorPerson.Birthdate,
+                                        IdPersonMis = dto.AuthorPerson.IdPersonMis,
+                                        Documents = dto.AuthorPerson.Documents.Select(d => new IdentityDocument()
+                                        {
+                                            DocN = d.DocN,
+                                            DocS = d.DocS,
+                                            DocumentName = d.DocumentName,
+                                            ExpiredDate = d.ExpiredDate,
+                                            IdDocumentType = (byte)d.IdDocumentType,
+                                            IdProvider = d.IdProvider,
+                                            IssuedDate = d.IssuedDate,
+                                            ProviderName = d.ProviderName,
+                                            RegionCode = d.RegionCode,
+                                            StartDate = d.StartDate
+                                        }).ToArray()
+                                    },
+                                    IdLpu = null,
+                                    IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
+                                },
+                                CreationDate = DateTime.Now,
+                                Header = dto.Header,
+                                IdDocumentMis = dto.IdDocumentMis
+                     };
 
-
-
-
-                await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.IDLPU, "patient5ssq", null, laboratoryReport, null);
+                await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.IDLPU, patient.IdPatientMIS, null, laboratoryReport, null);
 
                 return new BaseResponse(HttpStatusCode.OK);
             }
@@ -225,7 +227,7 @@ namespace MatrixN3HealthManager.Main
             {
                 return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, ex.Message);
             }
-            
+
         }
         public async Task<BaseResponse> UpdateMedRecord()
         {

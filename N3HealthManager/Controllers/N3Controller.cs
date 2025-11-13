@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MatrixN3HealthManager.DTOs;
+using N3HealthManager.DTOs;
 
 namespace MatrixN3HealthManager.Controllers
 {
@@ -12,8 +13,21 @@ namespace MatrixN3HealthManager.Controllers
         [HttpPost("addMedRecord")]
         public async Task<IActionResult> AddMedRecord(MedDocumentCreateDto dto)
         {
-            await n3HealthService.AddMedRecord(dto);
-            return Ok();
+            var result = await n3HealthService.AddMedRecord(dto);
+
+            return result.Exception == null
+                ? Ok(new { result.Code, result.Data })
+                : BadRequest(new { result.Code, result.ErrorMessage });
+        }
+
+        [HttpPost("modifyPatient")]
+        public async Task<IActionResult> ModifyPatientAndGetId(AddPatientRequestDto addPatientRequestDto)
+        {
+            var result = await n3HealthService.AddPatientAndGetId(addPatientRequestDto);
+            
+            return result.Exception == null
+                ? Ok(new { result.Code, result.Data })
+                : BadRequest(new { result.Code, result.ErrorMessage });
         }
     }
 }
