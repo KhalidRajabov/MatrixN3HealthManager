@@ -1,6 +1,5 @@
-﻿using N3HealthManager.DTOs;
-using N3HealthManager.Models;
-using PixService;
+﻿using MatrixN3HealthManager.DTOs;
+using MatrixN3HealthManager.Models;
 
 namespace MatrixN3HealthManager.Main
 {

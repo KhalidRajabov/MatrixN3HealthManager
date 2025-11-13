@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace N3HealthManager.Models
+namespace MatrixN3HealthManager.Models
 {
     public class BaseResponse
     {

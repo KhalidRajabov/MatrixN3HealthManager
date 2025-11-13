@@ -1,9 +1,9 @@
 ﻿using MatrixN3HealthManager.Main;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using N3HealthManager.DTOs;
+using MatrixN3HealthManager.DTOs;
 
-namespace N3HealthManager.Controllers
+namespace MatrixN3HealthManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

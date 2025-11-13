@@ -1,7 +1,6 @@
 ﻿using EMKService;
+using MatrixN3HealthManager.DTOs;
 using MatrixN3HealthManager.Models;
-using N3HealthManager.DTOs;
-using N3HealthManager.Models;
 using PixService;
 using System.Net;
 
@@ -133,11 +132,6 @@ namespace MatrixN3HealthManager.Main
         {
             try
             {
-                byte[] data = Convert.FromBase64String("");
-                byte[] organizationSIgn = Convert.FromBase64String("");
-                byte[] sign = Convert.FromBase64String("");
-
-
                 var laboratoryReport = new MedDocument
                 {
                     Attachments = [
@@ -160,7 +154,7 @@ namespace MatrixN3HealthManager.Main
                                 MiddleName = dto.DoctorPerson.MiddleName,
                                 FamilyName = dto.DoctorPerson.FamilyName
                             },
-                            Sex = dto.DoctorPerson.Sex,
+                            Sex = (byte)dto.DoctorPerson.Sex,
                             Birthdate = dto.DoctorPerson.Birthdate,
                             IdPersonMis = dto.DoctorPerson.IdPersonMis,
                             Documents = dto.DoctorPerson.Documents.Select(d => new IdentityDocument()
@@ -169,7 +163,7 @@ namespace MatrixN3HealthManager.Main
                                 DocS = d.DocS,
                                 DocumentName = d.DocumentName,
                                 ExpiredDate = d.ExpiredDate,
-                                IdDocumentType = d.IdDocumentType,
+                                IdDocumentType = (byte)d.IdDocumentType,
                                 IdProvider = d.IdProvider,
                                 IssuedDate = d.IssuedDate,
                                 ProviderName = d.ProviderName,
@@ -195,7 +189,7 @@ namespace MatrixN3HealthManager.Main
                                 MiddleName = dto.AuthorPerson.MiddleName,
                                 FamilyName = dto.AuthorPerson.FamilyName
                             },
-                            Sex = dto.AuthorPerson.Sex,
+                            Sex = (byte)dto.AuthorPerson.Sex,
                             Birthdate = dto.AuthorPerson.Birthdate,
                             IdPersonMis = dto.AuthorPerson.IdPersonMis,
                             Documents = dto.AuthorPerson.Documents.Select(d => new IdentityDocument()
@@ -204,7 +198,7 @@ namespace MatrixN3HealthManager.Main
                                 DocS = d.DocS,
                                 DocumentName = d.DocumentName,
                                 ExpiredDate = d.ExpiredDate,
-                                IdDocumentType = d.IdDocumentType,
+                                IdDocumentType = (byte)d.IdDocumentType,
                                 IdProvider = d.IdProvider,
                                 IssuedDate = d.IssuedDate,
                                 ProviderName = d.ProviderName,
@@ -223,7 +217,7 @@ namespace MatrixN3HealthManager.Main
 
 
 
-                await emkClient.AddMedRecordAsync(projectGuid, idLPU, "patient5ssq", null, laboratoryReport, null);
+                await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.IDLPU, "patient5ssq", null, laboratoryReport, null);
 
                 return new BaseResponse(HttpStatusCode.OK);
             }
