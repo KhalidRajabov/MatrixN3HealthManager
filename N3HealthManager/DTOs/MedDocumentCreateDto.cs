@@ -33,7 +33,7 @@ namespace MatrixN3HealthManager.DTOs
         public N3Enums.N3Sex Sex { get; set; }
 
         public DateTime Birthdate { get; set; }
-        public string IdPersonMis { get; set; } = Guid.NewGuid().ToString();
+        public string IdPersonMis { get; set; }
 
         public List<IdentityDocumentDto> Documents { get; set; } = new();
     }
