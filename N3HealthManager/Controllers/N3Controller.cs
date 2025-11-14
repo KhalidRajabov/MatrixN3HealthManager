@@ -1,8 +1,6 @@
-﻿using MatrixN3HealthManager.Main;
-using Microsoft.AspNetCore.Http;
+﻿using MatrixN3HealthManager.DTOs;
+using MatrixN3HealthManager.Main;
 using Microsoft.AspNetCore.Mvc;
-using MatrixN3HealthManager.DTOs;
-using N3HealthManager.DTOs;
 
 namespace MatrixN3HealthManager.Controllers
 {

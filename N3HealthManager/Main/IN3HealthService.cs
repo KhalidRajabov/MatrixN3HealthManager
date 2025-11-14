@@ -1,6 +1,5 @@
 ﻿using MatrixN3HealthManager.DTOs;
 using MatrixN3HealthManager.Models;
-using N3HealthManager.DTOs;
 
 namespace MatrixN3HealthManager.Main
 {

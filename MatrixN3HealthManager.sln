@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36414.22 d17.14
+VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3HealthManager", "N3HealthManager\N3HealthManager.csproj", "{3350FF19-4F53-47A0-9796-2151B568C385}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixN3HealthManager", "N3HealthManager\MatrixN3HealthManager.csproj", "{3350FF19-4F53-47A0-9796-2151B568C385}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

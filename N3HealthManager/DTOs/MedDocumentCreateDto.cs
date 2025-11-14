@@ -4,12 +4,12 @@ namespace MatrixN3HealthManager.DTOs
 {
     public class MedDocumentCreateDto
     {
-        public string DataBase64 { get; set; } = string.Empty;
-        public string OrganizationSignBase64 { get; set; } = string.Empty;
-        public string SignBase64 { get; set; } = string.Empty;
+        public string? DataBase64 { get; set; } 
+        public string? OrganizationSignBase64 { get; set; }
+        public string? SignBase64 { get; set; } 
 
-        public string ProjectGuid { get; set; }
-        public string IDLPU { get; set; }
+        public string? ProjectGuid { get; set; }
+        public string? IDLPU { get; set; }
 
         /// <summary>
         /// Global ID – will be used to convert into Patient MIS ID

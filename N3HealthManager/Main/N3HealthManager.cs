@@ -1,7 +1,6 @@
 ﻿using EMKService;
 using MatrixN3HealthManager.DTOs;
 using MatrixN3HealthManager.Models;
-using N3HealthManager.DTOs;
 using PixService;
 using System.Net;
 
@@ -23,6 +22,8 @@ namespace MatrixN3HealthManager.Main
         {
             try
             {
+                var existingPatient = await pixClient.GetPatientByGlobalIdAsync(dto.ProjectGuid, dto.PatientGlobalId, dto.IdLpu);
+                
                 var patientDto = dto.Patient;
 
                 var patient = new PatientDto
@@ -32,7 +33,7 @@ namespace MatrixN3HealthManager.Main
                     MiddleName = patientDto.MiddleName,
                     BirthDate = patientDto.BirthDate,
                     Sex = (byte)patientDto.Sex,
-                    IdPatientMIS = patientDto.IdPatientMIS,
+                    IdPatientMIS = existingPatient != null? existingPatient.IdPatientMIS : null,
                     IdGlobal = dto.PatientGlobalId,
                     BirthPlace = new BirthPlaceDto
                     {
@@ -65,7 +66,6 @@ namespace MatrixN3HealthManager.Main
                     }).ToArray()
                 };
 
-                var existingPatient = await pixClient.GetPatientByGlobalIdAsync(dto.ProjectGuid, dto.PatientGlobalId, dto.IdLpu);
                 
                 return new BaseResponse(
                     HttpStatusCode.OK,

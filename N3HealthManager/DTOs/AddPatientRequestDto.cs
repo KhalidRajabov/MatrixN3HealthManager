@@ -1,6 +1,6 @@
 ﻿using MatrixN3HealthManager.Models;
 
-namespace N3HealthManager.DTOs
+namespace MatrixN3HealthManager.DTOs
 {
     public class AddPatientRequestDto
     {
