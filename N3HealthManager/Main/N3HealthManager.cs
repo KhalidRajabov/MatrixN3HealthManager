@@ -133,18 +133,19 @@ namespace MatrixN3HealthManager.Main
             try
             {
 
-                var patient = await pixClient.GetPatientByGlobalIdAsync(dto.ProjectGuid, dto.PatientGlobalId, dto.IDLPU);
+                var patient = await pixClient.GetPatientByGlobalIdAsync(dto.ProjectGuid, dto.PatientGlobalId, dto.Idlpu);
                 if (patient == null)
                     return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, "Patient not found");
 
                 var laboratoryReport = new MedDocument
                 {
+                    IdMedDocumentType = 109,
                     Attachments = [
                     new MedDocumentDtoDocumentAttachment
                     {
                         Data = Convert.FromBase64String(dto.DataBase64),
                         OrganizationSign = Convert.FromBase64String(dto.OrganizationSignBase64),
-                        MimeType = "application/pdf",
+                        MimeType = dto.MimeType,
                         PersonalSigns = [
                             new MedDocumentDtoPersonalSign
                             {
@@ -219,7 +220,7 @@ namespace MatrixN3HealthManager.Main
                                 IdDocumentMis = dto.IdDocumentMis
                      };
 
-                await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.IDLPU, patient.IdPatientMIS, null, laboratoryReport, null);
+                await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.Idlpu, patient.IdPatientMIS, null, laboratoryReport, null);
 
                 return new BaseResponse(HttpStatusCode.OK);
             }

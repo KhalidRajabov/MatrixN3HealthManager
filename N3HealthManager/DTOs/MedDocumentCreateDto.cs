@@ -6,10 +6,11 @@ namespace MatrixN3HealthManager.DTOs
     {
         public string? DataBase64 { get; set; } 
         public string? OrganizationSignBase64 { get; set; }
-        public string? SignBase64 { get; set; } 
+        public string? SignBase64 { get; set; }
+        public string? MimeType { get; set; }
 
         public string? ProjectGuid { get; set; }
-        public string? IDLPU { get; set; }
+        public string? Idlpu { get; set; }
 
         /// <summary>
         /// Global ID – will be used to convert into Patient MIS ID
@@ -48,7 +49,6 @@ namespace MatrixN3HealthManager.DTOs
         public DateTime? StartDate { get; set; }
         public DateTime? IssuedDate { get; set; }
         public DateTime? ExpiredDate { get; set; }
-
         public string ProviderName { get; set; }
         public string RegionCode { get; set; }
 
