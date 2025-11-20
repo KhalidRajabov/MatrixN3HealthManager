@@ -236,5 +236,29 @@
             MinistryOfShippingPassport = 6,                       // Паспорт Минморфлота
             IDCard = 239                                           // Удостоверение
         }
+        public enum IdProvider
+        {
+            DocumentDuringCitizenshipReview = 33,                 // Документ, удостоверяющий личность на период рассмотрения заявления о признании гражданином РФ или о приеме в гражданство РФ
+            MigrationCard = 35,                                   // Миграционная карта
+            TempIdentityNoCitizenshipRF = 49,                     // Временное удостоверение личности лица без гражданства в РФ
+            PassportUSSR = 1,                                     // Паспорт гражданина СССР
+            UkraineDLORIdentityDocs = 51,                         // Документы для граждан Украины и лиц без гражданства из районов ДНР/ЛНР
+            TemporaryResidencePermitRF = 248,                     // Разрешение на временное проживание в РФ
+            TempResidencePermitStateless = 253,                   // Разрешение на временное проживание (для лиц без гражданства)
+            ForeignIdentityDocStateless = 254,                    // Документ личности лица без гражданства, выданный иностранным государством
+            ForeignPassportUSSR = 2,                              // Загранпаспорт гражданина СССР
+            OtherDocsAccordingToLaw = 19,                         // Иные документы, предусмотренные федеральным законом
+            ResidencePermitRF = 11,                               // Вид на жительство в РФ
+            BirthCertificate = 3,                                 // Свидетельство о рождении
+            IdentityCard = 4,                                     // Удостоверение личности
+            ReleaseCertificate = 5,                                // Справка об освобождении
+            MinistryOfMerchantFleetPassport = 6,                  // Паспорт Минморфлота
+            MilitaryID = 7,                                       // Военный билет
+            DiplomaticPassportRF = 8,                             // Дипломатический паспорт гражданина РФ
+            ForeignPassport = 9,                                  // Иностранный паспорт
+            RefugeeApplicationCertificate = 10,                   // Свидетельство о регистрации ходатайства иммигранта о признании его беженцем
+            Certificate = 230                                     // Сертификат
+        }
+
     }
 }

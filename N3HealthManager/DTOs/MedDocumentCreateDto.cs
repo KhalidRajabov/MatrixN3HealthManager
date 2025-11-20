@@ -54,7 +54,7 @@ namespace MatrixN3HealthManager.DTOs
 
         public N3Enums.N3IdDocumentType IdDocumentType { get; set; }
 
-        public int? IdProvider { get; set; }
+        public N3Enums.IdProvider? IdProvider { get; set; }
     }
 
 
