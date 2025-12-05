@@ -217,7 +217,7 @@ namespace MatrixN3HealthManager.Main
                                 },
                                 CreationDate = DateTime.Now,
                                 Header = dto.Header,
-                                IdDocumentMis = dto.IdDocumentMis
+                                IdDocumentMis = dto.IdDocumentMis,
                      };
 
                 await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.Idlpu, patient.IdPatientMIS, null, laboratoryReport, null);
