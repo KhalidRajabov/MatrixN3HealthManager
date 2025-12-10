@@ -39,8 +39,8 @@ namespace MatrixN3HealthManager.DTOs
     public class AddressCreateDto
     {
         public string Street { get; set; }
-        public string Building { get; set; }
-        public string Appartment { get; set; }
+        public string? Building { get; set; }
+        public string? Appartment { get; set; }
         public string City { get; set; }
 
         public int? PostalCode { get; set; }
@@ -57,12 +57,13 @@ namespace MatrixN3HealthManager.DTOs
     }
     public class DocumentCreateDto
     {
-        public string DocN { get; set; }
-        public string DocS { get; set; }
+        public string? DocN { get; set; }
+        public string? DocS { get; set; }
 
         public N3Enums.N3IdDocumentType DocumentType { get; set; }
 
-        public string ProviderName { get; set; }
-        public string RegionCode { get; set; }
+        public string? ProviderName { get; set; }
+        public DateTime? IssuedDate { get; set; }
+        public string? RegionCode { get; set; }
     }
 }
