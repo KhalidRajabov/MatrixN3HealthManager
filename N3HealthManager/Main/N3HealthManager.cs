@@ -181,9 +181,9 @@ namespace MatrixN3HealthManager.Main
                         Documents = patientDto.Documents.Select(d => new DocumentDto
                         {
                             DocN = d.DocN,
-                            DocS = d.DocS,
+                            //DocS = d.DocS,
                             ProviderName = d.ProviderName,
-                            RegionCode = d.RegionCode,
+                            //RegionCode = d.RegionCode,
                             IdDocumentType = (short)d.DocumentType,
                             IssuedDate = d.IssuedDate,
                         }).ToArray()
