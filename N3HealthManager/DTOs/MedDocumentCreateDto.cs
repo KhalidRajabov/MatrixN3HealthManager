@@ -17,7 +17,6 @@ namespace MatrixN3HealthManager.DTOs
         /// </summary>
         public string PatientGlobalId { get; set; }
 
-        public string Header { get; set; } = "Лабораторные исследования";
         public string IdDocumentMis { get; set; }
 
         public PersonDto AuthorPerson { get; set; }
