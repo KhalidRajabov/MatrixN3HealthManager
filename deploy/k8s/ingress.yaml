@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medcard-n3health-backend
+  namespace: matrixcrm-prod
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - med.matrixcrm.ru
+      secretName: medcard-n3health-backend-tls
+  rules:
+    - host: med.matrixcrm.ru
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: medcard-n3health-backend
+                port:
+                  number: 80
+

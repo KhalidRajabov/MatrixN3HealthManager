@@ -1,0 +1,131 @@
+# Альтернативный вариант deployment с hostNetwork для VPN
+# Используйте этот вариант если нужна гарантированная маршрутизация через VPN
+# ВАЖНО: С hostNetwork поды будут доступны по IP узла напрямую
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medcard-n3health-backend
+  namespace: matrixcrm-prod
+  labels:
+    app: medcard-n3health-backend
+spec:
+  replicas: 2
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: medcard-n3health-backend
+  template:
+    metadata:
+      labels:
+        app: medcard-n3health-backend
+    spec:
+      # Используем hostNetwork для доступа к VPN интерфейсу
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      
+      initContainers:
+        - name: openvpn-init
+          image: dperson/openvpn-client:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_MODULE
+            privileged: true
+          volumeMounts:
+            - name: openvpn-config
+              mountPath: /vpn
+            - name: openvpn-credentials
+              mountPath: /etc/openvpn
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Preparing OpenVPN configuration..."
+              cp /vpn/client.ovpn /etc/openvpn/client.conf
+              if [ ! -f /etc/openvpn/ca.crt ]; then
+                echo "ERROR: ca.crt not found!"
+                exit 1
+              fi
+              echo "OpenVPN ready"
+      
+      containers:
+        - name: openvpn-client
+          image: dperson/openvpn-client:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_MODULE
+            privileged: true
+          volumeMounts:
+            - name: openvpn-config
+              mountPath: /vpn
+            - name: openvpn-credentials
+              mountPath: /etc/openvpn
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cp /vpn/client.ovpn /etc/openvpn/client.conf
+              echo "Starting OpenVPN..."
+              openvpn --config /etc/openvpn/client.conf --daemon openvpn --log /tmp/openvpn.log
+              sleep 10
+              if ip link show tun0 > /dev/null 2>&1; then
+                echo "VPN connected: $(ip addr show tun0)"
+              else
+                echo "VPN interface not ready"
+              fi
+              tail -f /tmp/openvpn.log 2>/dev/null || sleep infinity
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+        
+        - name: medcard-n3health-backend
+          image: cr.yandex/crpbaq5rr0b32nc3630p/matrix-n3-health-manager:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              # При hostNetwork порт будет доступен на узле напрямую
+              hostPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: openvpn-config
+          configMap:
+            name: openvpn-config
+        - name: openvpn-credentials
+          secret:
+            secretName: openvpn-credentials
+
+
+
+
+
+
+
+

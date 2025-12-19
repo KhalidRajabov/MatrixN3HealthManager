@@ -10,13 +10,16 @@ builder.Services.AddScoped<IN3HealthService, N3HealthManager>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Отключаем HTTPS редирект для работы через LoadBalancer без SSL
+// app.UseHttpsRedirection();
 
-app.UseHttpsRedirection();
+// Включаем Swagger в Production для доступа к API документации
+    app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "N3 Health Manager API v1");
+    c.RoutePrefix = "swagger"; // Swagger доступен по /swagger
+});
 
 app.UseAuthorization();
 

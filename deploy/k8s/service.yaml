@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: medcard-n3health-backend
+  namespace: matrixcrm-prod
+  labels:
+    app: medcard-n3health-backend
+spec:
+  type: LoadBalancer
+  selector:
+    app: medcard-n3health-backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+

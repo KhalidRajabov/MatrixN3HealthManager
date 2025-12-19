@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openvpn-config
+  namespace: matrixcrm-prod
+data:
+  client.ovpn: |
+    remote vpn0-b2b.n3health.ru 1194
+    remote vpn1-b2b.n3health.ru 1194
+    auth-nocache
+    proto udp
+    client
+    dev tun
+    resolv-retry infinite
+    persist-key
+    persist-tun
+    comp-lzo
+    verb 3
+    mute 20
+    cipher AES-256-CBC
+    auth SHA1
+    tls-client
+    remote-cert-tls server
+    key-direction 1
+    ca /etc/openvpn/ca.crt
+    cert /etc/openvpn/client.crt
+    key /etc/openvpn/client.key
+    tls-auth /etc/openvpn/tls-auth.key 1
+    ping 10
+    ping-restart 60
+
