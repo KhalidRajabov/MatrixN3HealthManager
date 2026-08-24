@@ -4,6 +4,8 @@ using MatrixN3HealthManager.Models;
 using Newtonsoft.Json;
 using PixService;
 using System.Net;
+using System.Globalization;
+using System.Xml.Linq;
 
 namespace MatrixN3HealthManager.Main
 {
@@ -273,6 +275,9 @@ namespace MatrixN3HealthManager.Main
                     return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error,
                         $"Invalid CDA DataBase64: too small ({xmlBytes.Length} bytes).");
 
+                if (!TryReadCdaMetadata(xmlBytes, out var documentId, out var creationDate, out var metadataError))
+                    return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, metadataError);
+
                 //string bothSigns = "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";
                 //var orgSignBytes = Convert.FromBase64String(dto.OrganizationSignBase64);
                 var signBytes = Convert.FromBase64String(dto.SignBase64);
@@ -355,9 +360,9 @@ namespace MatrixN3HealthManager.Main
                         IdLpu = null,
                         IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
                     },
-                    CreationDate = DateTime.Now,
+                    CreationDate = creationDate.UtcDateTime,
                     Header = "Лабораторные исследования",
-                    IdDocumentMis = Guid.NewGuid().ToString(),
+                    IdDocumentMis = documentId,
                 };
 
                 await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.Idlpu, dto.PatientGlobalId, null, laboratoryReport, null);
@@ -466,6 +471,81 @@ namespace MatrixN3HealthManager.Main
 
             await emkClient.UpdateMedRecordAsync(projectGuid, idLPU, "patient5ssq", null, medDocument, null);
             return new BaseResponse(HttpStatusCode.OK); ;
+        }
+
+        private static bool TryReadCdaMetadata(
+            byte[] xmlBytes,
+            out string documentId,
+            out DateTimeOffset creationDate,
+            out string error)
+        {
+            documentId = string.Empty;
+            creationDate = default;
+            error = string.Empty;
+
+            try
+            {
+                using var stream = new MemoryStream(xmlBytes);
+                var document = XDocument.Load(stream, LoadOptions.None);
+                XNamespace cda = "urn:hl7-org:v3";
+
+                if (document.Root?.Name != cda + "ClinicalDocument")
+                {
+                    error = "CDA-документ должен содержать корневой элемент ClinicalDocument";
+                    return false;
+                }
+
+                documentId = document.Root
+                    .Element(cda + "id")?
+                    .Attribute("extension")?
+                    .Value?
+                    .Trim() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(documentId))
+                {
+                    error = "В CDA не заполнен extension корневого id";
+                    return false;
+                }
+
+                var effectiveTime = document.Root
+                    .Element(cda + "effectiveTime")?
+                    .Attribute("value")?
+                    .Value?
+                    .Trim();
+
+                if (string.IsNullOrWhiteSpace(effectiveTime)
+                    || effectiveTime.Length != 17
+                    || effectiveTime[12] is not ('+' or '-'))
+                {
+                    error = "В CDA не заполнен корректный корневой effectiveTime";
+                    return false;
+                }
+
+                var normalizedEffectiveTime = effectiveTime.Insert(15, ":");
+                if (!DateTimeOffset.TryParseExact(
+                        normalizedEffectiveTime,
+                        "yyyyMMddHHmmzzz",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out creationDate))
+                {
+                    error = "В CDA не заполнен корректный корневой effectiveTime";
+                    return false;
+                }
+
+                if (creationDate > DateTimeOffset.UtcNow.AddMinutes(5))
+                {
+                    error = "В CDA указано будущее время создания документа";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex) when (ex is FormatException or System.Xml.XmlException)
+            {
+                error = "CDA-документ содержит некорректный XML";
+                return false;
+            }
         }
 
 
