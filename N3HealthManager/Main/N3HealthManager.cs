@@ -306,21 +306,9 @@ namespace MatrixN3HealthManager.Main
                                             FamilyName = dto.DoctorPerson.FamilyName
                                         },
                                         Sex = (byte)dto.DoctorPerson.Sex,
-                                        Birthdate = dto.DoctorPerson.Birthdate,
+                                        Birthdate = NormalizePersonBirthdate(dto.DoctorPerson.Birthdate),
                                         IdPersonMis = dto.DoctorPerson.IdPersonMis,
-                                        Documents = dto.DoctorPerson.Documents.Select(d => new IdentityDocument()
-                                        {
-                                            DocN = d.DocN,
-                                            DocS = d.DocS,
-                                            DocumentName = d.DocumentName,
-                                            ExpiredDate = d.ExpiredDate,
-                                            IdDocumentType = (byte)d.IdDocumentType,
-                                            IdProvider = d.IdProvider.HasValue ? (int)d.IdProvider.Value : null,
-                                            IssuedDate = d.IssuedDate,
-                                            ProviderName = d.ProviderName,
-                                            RegionCode = d.RegionCode,
-                                            StartDate = d.StartDate
-                                        }).ToArray()
+                                        Documents = dto.DoctorPerson.Documents.Select(MapIdentityDocument).ToArray()
                                     },
                                     IdLpu = null,
                                     IdSpeciality = (ushort)N3Enums.N3IdSpeciality.Geriatrics,
@@ -341,21 +329,9 @@ namespace MatrixN3HealthManager.Main
                                 FamilyName = dto.AuthorPerson.FamilyName
                             },
                             Sex = (byte)dto.AuthorPerson.Sex,
-                            Birthdate = dto.AuthorPerson.Birthdate,
+                            Birthdate = NormalizePersonBirthdate(dto.AuthorPerson.Birthdate),
                             IdPersonMis = dto.AuthorPerson.IdPersonMis,
-                            Documents = dto.AuthorPerson.Documents.Select(d => new IdentityDocument()
-                            {
-                                DocN = d.DocN,
-                                DocS = d.DocS,
-                                DocumentName = d.DocumentName,
-                                ExpiredDate = d.ExpiredDate,
-                                IdDocumentType = (byte)d.IdDocumentType,
-                                IdProvider = d.IdProvider.HasValue ? (int)d.IdProvider.Value : null,
-                                IssuedDate = d.IssuedDate,
-                                ProviderName = d.ProviderName,
-                                RegionCode = d.RegionCode,
-                                StartDate = d.StartDate
-                            }).ToArray()
+                            Documents = dto.AuthorPerson.Documents.Select(MapIdentityDocument).ToArray()
                         },
                         IdLpu = null,
                         IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
@@ -471,6 +447,58 @@ namespace MatrixN3HealthManager.Main
 
             await emkClient.UpdateMedRecordAsync(projectGuid, idLPU, "patient5ssq", null, medDocument, null);
             return new BaseResponse(HttpStatusCode.OK); ;
+        }
+
+        private static DateTime? NormalizePersonBirthdate(DateTime? birthdate)
+        {
+            if (!birthdate.HasValue)
+                return null;
+
+            var value = birthdate.Value;
+            if (value == default || value.Year < 1900)
+                return null;
+
+            return value;
+        }
+
+        private static DateTime? NormalizeOptionalDocumentDate(DateTime? value)
+        {
+            if (!value.HasValue)
+                return null;
+
+            if (value.Value == default || value.Value.Year < 1900)
+                return null;
+
+            return value;
+        }
+
+        private static IdentityDocument MapIdentityDocument(IdentityDocumentDto d)
+        {
+            var isSnils = d.IdDocumentType == N3Enums.N3IdDocumentType.PensionInsuranceCertificate;
+
+            if (isSnils)
+            {
+                return new IdentityDocument
+                {
+                    DocN = d.DocN,
+                    IdDocumentType = (byte)d.IdDocumentType,
+                    ProviderName = string.IsNullOrWhiteSpace(d.ProviderName) ? "ПФР" : d.ProviderName.Trim()
+                };
+            }
+
+            return new IdentityDocument
+            {
+                DocN = d.DocN,
+                DocS = d.DocS,
+                DocumentName = d.DocumentName,
+                ExpiredDate = NormalizeOptionalDocumentDate(d.ExpiredDate),
+                IdDocumentType = (byte)d.IdDocumentType,
+                IdProvider = d.IdProvider.HasValue ? (int)d.IdProvider.Value : null,
+                IssuedDate = NormalizeOptionalDocumentDate(d.IssuedDate),
+                ProviderName = d.ProviderName,
+                RegionCode = d.RegionCode,
+                StartDate = NormalizeOptionalDocumentDate(d.StartDate)
+            };
         }
 
         private static bool TryReadCdaMetadata(
