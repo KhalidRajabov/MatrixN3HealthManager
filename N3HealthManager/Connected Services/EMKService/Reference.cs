@@ -1185,7 +1185,7 @@ namespace EMKService
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute(Order=2)]
+        [System.Runtime.Serialization.DataMemberAttribute(EmitDefaultValue=false, Order=2)]
         public System.Nullable<System.DateTime> Birthdate
         {
             get

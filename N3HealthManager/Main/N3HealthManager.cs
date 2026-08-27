@@ -297,19 +297,7 @@ namespace MatrixN3HealthManager.Main
                                 Sign = signBytes,
                                 Doctor = new ()
                                 {
-                                    Person = new ()
-                                    {
-                                        HumanName = new()
-                                        {
-                                            GivenName = dto.DoctorPerson.GivenName,
-                                            MiddleName = dto.DoctorPerson.MiddleName,
-                                            FamilyName = dto.DoctorPerson.FamilyName
-                                        },
-                                        Sex = (byte)dto.DoctorPerson.Sex,
-                                        Birthdate = NormalizePersonBirthdate(dto.DoctorPerson.Birthdate),
-                                        IdPersonMis = dto.DoctorPerson.IdPersonMis,
-                                        Documents = dto.DoctorPerson.Documents.Select(MapIdentityDocument).ToArray()
-                                    },
+                                    Person = MapPersonWithIdentity(dto.DoctorPerson),
                                     IdLpu = null,
                                     IdSpeciality = (ushort)N3Enums.N3IdSpeciality.Geriatrics,
                                     IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
@@ -320,19 +308,7 @@ namespace MatrixN3HealthManager.Main
                     ],
                     Author = new()
                     {
-                        Person = new()
-                        {
-                            HumanName = new()
-                            {
-                                GivenName = dto.AuthorPerson.GivenName,
-                                MiddleName = dto.AuthorPerson.MiddleName,
-                                FamilyName = dto.AuthorPerson.FamilyName
-                            },
-                            Sex = (byte)dto.AuthorPerson.Sex,
-                            Birthdate = NormalizePersonBirthdate(dto.AuthorPerson.Birthdate),
-                            IdPersonMis = dto.AuthorPerson.IdPersonMis,
-                            Documents = dto.AuthorPerson.Documents.Select(MapIdentityDocument).ToArray()
-                        },
+                        Person = MapPersonWithIdentity(dto.AuthorPerson),
                         IdLpu = null,
                         IdPosition = (ushort)N3Enums.N3IdPosition.HeadOfKennel
                     },
@@ -455,10 +431,10 @@ namespace MatrixN3HealthManager.Main
                 return null;
 
             var value = birthdate.Value;
-            if (value == default || value.Year < 1900)
+            if (value == default || value == DateTime.MinValue || value.Year < 1900)
                 return null;
 
-            return value;
+            return value.Date;
         }
 
         private static DateTime? NormalizeOptionalDocumentDate(DateTime? value)
@@ -466,10 +442,32 @@ namespace MatrixN3HealthManager.Main
             if (!value.HasValue)
                 return null;
 
-            if (value.Value == default || value.Value.Year < 1900)
+            if (value.Value == default || value.Value == DateTime.MinValue || value.Value.Year < 1900)
                 return null;
 
             return value;
+        }
+
+        private static PersonWithIdentity MapPersonWithIdentity(PersonDto person)
+        {
+            var result = new PersonWithIdentity
+            {
+                HumanName = new HumanName
+                {
+                    GivenName = person.GivenName,
+                    MiddleName = person.MiddleName,
+                    FamilyName = person.FamilyName
+                },
+                Sex = (byte)person.Sex,
+                IdPersonMis = person.IdPersonMis,
+                Documents = person.Documents?.Select(MapIdentityDocument).ToArray() ?? Array.Empty<IdentityDocument>()
+            };
+
+            var birthdate = NormalizePersonBirthdate(person.Birthdate);
+            if (birthdate.HasValue)
+                result.Birthdate = birthdate;
+
+            return result;
         }
 
         private static IdentityDocument MapIdentityDocument(IdentityDocumentDto d)
