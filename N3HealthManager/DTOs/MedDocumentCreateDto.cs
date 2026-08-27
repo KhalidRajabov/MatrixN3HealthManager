@@ -43,14 +43,14 @@ namespace MatrixN3HealthManager.DTOs
     public class IdentityDocumentDto
     {
         public string DocN { get; set; }
-        public string DocS { get; set; }
-        public string DocumentName { get; set; }
+        public string? DocS { get; set; }
+        public string? DocumentName { get; set; }
 
         public DateTime? StartDate { get; set; }
         public DateTime? IssuedDate { get; set; }
         public DateTime? ExpiredDate { get; set; }
-        public string ProviderName { get; set; }
-        public string RegionCode { get; set; }
+        public string? ProviderName { get; set; }
+        public string? RegionCode { get; set; }
 
         public N3Enums.N3IdDocumentType IdDocumentType { get; set; }
 
