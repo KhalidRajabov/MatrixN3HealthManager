@@ -11,6 +11,7 @@ namespace MatrixN3HealthManager.DTOs
 
         public string? ProjectGuid { get; set; }
         public string? Idlpu { get; set; }
+        public string? Header { get; set; }
 
         /// <summary>
         /// Global ID – will be used to convert into Patient MIS ID
@@ -35,6 +36,8 @@ namespace MatrixN3HealthManager.DTOs
 
         public DateTime? Birthdate { get; set; }
         public string IdPersonMis { get; set; }
+        public ushort? IdPosition { get; set; }
+        public ushort? IdSpeciality { get; set; }
 
         public List<IdentityDocumentDto> Documents { get; set; } = new();
     }
