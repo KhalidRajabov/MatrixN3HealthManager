@@ -8,6 +8,8 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: medcard-n3health-backend
@@ -67,73 +69,91 @@ spec:
             - /bin/sh
             - -c
             - |
-              # Создаем рабочую директорию
               mkdir -p /tmp/openvpn
-              # Копируем конфигурацию и сертификаты
               cp /vpn/client.ovpn /tmp/openvpn/client.conf
               cp /vpn-secrets/ca.crt /tmp/openvpn/ca.crt
               cp /vpn-secrets/client.crt /tmp/openvpn/client.crt
               cp /vpn-secrets/client.key /tmp/openvpn/client.key
               cp /vpn-secrets/tls-auth.key /tmp/openvpn/tls-auth.key
-              # Исправляем права доступа к ключам (только для владельца)
-              chmod 600 /tmp/openvpn/client.key
-              chmod 600 /tmp/openvpn/tls-auth.key
-              chmod 644 /tmp/openvpn/client.crt
-              chmod 644 /tmp/openvpn/ca.crt
-              # Обновляем пути в конфигурации
+              chmod 600 /tmp/openvpn/client.key /tmp/openvpn/tls-auth.key
+              chmod 644 /tmp/openvpn/client.crt /tmp/openvpn/ca.crt
               sed -i 's|/etc/openvpn|/tmp/openvpn|g' /tmp/openvpn/client.conf
-              # Добавляем nobind (как в оригинале) и скрипт для применения маршрутов
-              echo "nobind" >> /tmp/openvpn/client.conf
-              echo "script-security 2" >> /tmp/openvpn/client.conf
-              echo "up /tmp/openvpn/up.sh" >> /tmp/openvpn/client.conf
-              # Создаем скрипт для применения маршрутов
-              # Параметры up script: $1=interface, $2=mtu, $3=link_mtu, $4=local_ip, $5=remote_ip
-              echo '#!/bin/sh' > /tmp/openvpn/up.sh
-              echo 'VPN_IP=$4' >> /tmp/openvpn/up.sh
-              echo 'VPN_GW=$(echo $VPN_IP | cut -d. -f1-3).1' >> /tmp/openvpn/up.sh
-              echo 'echo "VPN up script: Interface=$1, IP=$VPN_IP, Gateway=$VPN_GW"' >> /tmp/openvpn/up.sh
-              echo '# Применяем маршруты для внутренних серверов через VPN' >> /tmp/openvpn/up.sh
-              echo 'ip route add 10.16.18.45/32 via $VPN_GW dev $1 2>/dev/null || true' >> /tmp/openvpn/up.sh
-              echo 'ip route add 10.16.18.50/32 via $VPN_GW dev $1 2>/dev/null || true' >> /tmp/openvpn/up.sh
-              echo 'echo "Routes applied through VPN"' >> /tmp/openvpn/up.sh
+              printf '%s\n' \
+                'nobind' \
+                'script-security 2' \
+                'up /tmp/openvpn/up.sh' \
+                'connect-retry 5' \
+                'auth-retry nointeract' \
+                'explicit-exit-notify' \
+                >> /tmp/openvpn/client.conf
+              printf '%s\n' \
+                '#!/bin/sh' \
+                'VPN_IF=$1' \
+                'VPN_IP=$4' \
+                'VPN_GW=$(echo "$VPN_IP" | cut -d. -f1-3).1' \
+                'echo "VPN up: if=$VPN_IF ip=$VPN_IP gw=$VPN_GW"' \
+                'ip route add 10.16.18.45/32 via "$VPN_GW" dev "$VPN_IF" 2>/dev/null || true' \
+                'ip route add 10.16.18.50/32 via "$VPN_GW" dev "$VPN_IF" 2>/dev/null || true' \
+                'ip route | head -10' \
+                > /tmp/openvpn/up.sh
               chmod +x /tmp/openvpn/up.sh
-              echo "Starting OpenVPN client..."
-              # Запускаем OpenVPN в фоне с логированием
-              openvpn --config /tmp/openvpn/client.conf --daemon --log /tmp/openvpn.log --writepid /tmp/openvpn.pid --verb 3
-              # Ждем подключения
-              echo "Waiting for VPN connection..."
-              CONNECTED=0
-              for i in {1..90}; do
-                if grep -q "Initialization Sequence Completed" /tmp/openvpn.log 2>/dev/null; then
-                  if ip link show tun0 > /dev/null 2>&1; then
+              backoff=8
+              while true; do
+                echo "Starting OpenVPN client..."
+                : > /tmp/openvpn.log
+                openvpn --config /tmp/openvpn/client.conf --daemon --log /tmp/openvpn.log --writepid /tmp/openvpn.pid --verb 3
+                connected=0
+                i=0
+                while [ "$i" -lt 45 ]; do
+                  if grep -q "Initialization Sequence Completed" /tmp/openvpn.log 2>/dev/null && ip link show tun0 >/dev/null 2>&1; then
                     VPN_IP=$(ip addr show tun0 | grep "inet " | awk '{print $2}' | cut -d/ -f1)
-                    VPN_GW=$(ip route | grep tun0 | grep "via" | head -1 | awk '{print $3}' || echo "172.26.32.1")
-                    echo "VPN connected! IP: $VPN_IP, Gateway: $VPN_GW"
-                    echo "Current routes:"
+                    echo "VPN connected! IP: $VPN_IP"
                     ip route | head -10
-                    CONNECTED=1
+                    connected=1
+                    backoff=8
                     break
                   fi
+                  if grep -q "AUTH_FAILED" /tmp/openvpn.log 2>/dev/null; then
+                    echo "AUTH_FAILED, retry after server releases the session"
+                    grep -E "AUTH_FAILED|SIGTERM" /tmp/openvpn.log | tail -5
+                    break
+                  fi
+                  if ! kill -0 "$(cat /tmp/openvpn.pid 2>/dev/null)" 2>/dev/null; then
+                    echo "OpenVPN exited before connect"
+                    tail -15 /tmp/openvpn.log || true
+                    break
+                  fi
+                  i=$((i + 1))
+                  sleep 2
+                done
+                if [ "$connected" -eq 1 ]; then
+                  while kill -0 "$(cat /tmp/openvpn.pid 2>/dev/null)" 2>/dev/null && ip link show tun0 >/dev/null 2>&1; do
+                    sleep 10
+                  done
+                  echo "VPN tunnel dropped, reconnecting"
                 fi
-                if grep -q "AUTH_FAILED" /tmp/openvpn.log 2>/dev/null; then
-                  echo "ERROR: AUTH_FAILED - VPN server rejected connection"
-                  echo "This usually means:"
-                  echo "1. Another connection with same certificate is active (disconnect local VPN)"
-                  echo "2. VPN server doesn't allow multiple connections"
-                  echo "3. Certificate issue"
-                  cat /tmp/openvpn.log | grep -A 5 "AUTH_FAILED" | tail -10
-                  # Продолжаем работать без VPN
-                  break
+                if [ -f /tmp/openvpn.pid ]; then
+                  kill "$(cat /tmp/openvpn.pid)" 2>/dev/null || true
+                  sleep 1
+                  kill -9 "$(cat /tmp/openvpn.pid)" 2>/dev/null || true
+                  rm -f /tmp/openvpn.pid
                 fi
-                sleep 2
+                echo "Retry in ${backoff}s"
+                sleep "$backoff"
+                if [ "$backoff" -lt 60 ]; then
+                  backoff=$((backoff * 2))
+                fi
               done
-              if [ $CONNECTED -eq 0 ]; then
-                echo "WARNING: VPN did not connect"
-                echo "Last 20 lines of log:"
-                tail -20 /tmp/openvpn.log || true
-              fi
-              # Держим контейнер живым
-              tail -f /tmp/openvpn.log 2>/dev/null || sleep infinity
+          readinessProbe:
+            exec:
+              command: ["/bin/true"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["/bin/true"]
+            initialDelaySeconds: 15
+            periodSeconds: 30
           resources:
             requests:
               cpu: 50m
@@ -145,6 +165,7 @@ spec:
         - name: medcard-n3health-backend
           image: cr.yandex/crpbaq5rr0b32nc3630p/matrix-n3-health-manager:latest
           imagePullPolicy: Always
+          command: ["dotnet", "MatrixN3HealthManager.dll"]
           ports:
             - containerPort: 8080
               name: http
@@ -160,6 +181,7 @@ spec:
                 secretKeyRef:
                   name: newrelic-secret
                   key: license-key
+                  optional: true
 
             - name: NEW_RELIC_APPLICATION_LOGGING_ENABLED
               value: "true"
