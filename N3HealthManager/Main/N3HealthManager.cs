@@ -215,9 +215,9 @@ namespace MatrixN3HealthManager.Main
 
                     var updatePatient = new PatientDto
                     {
-                        FamilyName = patientDto.FamilyName,
-                        GivenName = patientDto.GivenName,
-                        MiddleName = patientDto.MiddleName,
+                        FamilyName = patientDto.FamilyName.Trim(),
+                        GivenName = patientDto.GivenName.Trim(),
+                        MiddleName = patientDto.MiddleName.Trim(),
                         BirthDate = patientDto.BirthDate,
                         Sex = (byte)patientDto.Sex,
 
