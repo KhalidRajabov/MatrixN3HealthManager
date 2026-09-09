@@ -144,13 +144,28 @@ spec:
         
         - name: medcard-n3health-backend
           image: cr.yandex/crpbaq5rr0b32nc3630p/matrix-n3-health-manager:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: Production
+              value: "Production"
+
+            - name: NEW_RELIC_APP_NAME
+              value: "MatrixN3HealthManager"
+
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: newrelic-secret
+                  key: license-key
+
+            - name: NEW_RELIC_APPLICATION_LOGGING_ENABLED
+              value: "true"
+
+            - name: NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED
+              value: "true"
           readinessProbe:
             tcpSocket:
               port: http

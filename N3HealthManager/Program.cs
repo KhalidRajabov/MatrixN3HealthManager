@@ -25,4 +25,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.Logger.LogInformation(
+    "MatrixN3HealthManager application started");
+
 app.Run();

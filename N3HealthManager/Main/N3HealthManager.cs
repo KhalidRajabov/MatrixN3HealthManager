@@ -15,11 +15,13 @@ namespace MatrixN3HealthManager.Main
         private readonly EmkServiceClient emkClient;
         private readonly string projectGuid = "7e201716-0943-48c9-88d0-6ddd7b1553aa";
         private readonly string idLPU = "95f617cf-4747-4285-9681-4a875357df26";
+        private readonly ILogger<N3HealthManager> _logger;
 
-        public N3HealthManager()
+        public N3HealthManager(ILogger<N3HealthManager> logger)
         {
             pixClient = new PixServiceClient(PixServiceClient.EndpointConfiguration.BasicHttpBinding_IPixService);
             emkClient = new EmkServiceClient(EmkServiceClient.EndpointConfiguration.BasicHttpBinding_IEmkService);
+            _logger = logger;
         }
 
         public async Task<BaseResponse> AddPatientAndGetId(AddPatientRequestDto dto)
@@ -136,19 +138,28 @@ namespace MatrixN3HealthManager.Main
         {
             try
             {
+                _logger.LogInformation("AddMedRecord called with PatientGlobalId: {PatientGlobalId}, IdDocumentMis: {IdDocumentMis}", dto.PatientGlobalId, dto.IdDocumentMis);
+
 
                 PatientDto findingPatient = new()
                 {
                     IdPatientMIS = dto.PatientGlobalId
                 };
 
+                _logger.LogInformation("Fetching patient with IdPatientMIS: {IdPatientMIS}", findingPatient.IdPatientMIS);
                 var patients = await pixClient.GetPatientAsync(dto.ProjectGuid, dto.Idlpu, findingPatient, SourceType.Fed);
                 if (patients == null)
+                {
+                    
+                    _logger.LogWarning("Patient not found with IdPatientMIS: {IdPatientMIS}", findingPatient.IdPatientMIS);
                     return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, "Patient not found");
+                }
 
                 var existingPatient = patients.FirstOrDefault(x => x.IdPatientMIS == dto.PatientGlobalId);
                 if (existingPatient == null)
                 {
+                    _logger.LogInformation("Patient not found with IdPatientMIS: {IdPatientMIS}, creating new patient.", findingPatient.IdPatientMIS);
+
                     var patientDto = dto.Patient.Patient;
                     var patient = new PatientDto
                     {
@@ -195,13 +206,13 @@ namespace MatrixN3HealthManager.Main
 
 
                     var patientCreateDto = await pixClient.AddPatientAndGetIdAsync(dto.ProjectGuid, dto.Idlpu, patient);
+                    _logger.LogInformation("New patient created with PatientGlobalId: {IdGlobal}", patient.IdGlobal);
                 }
                 else
                 {
+                    _logger.LogInformation("Patient found with IdPatientMIS: {IdPatientMIS}, updating patient.", findingPatient.IdPatientMIS);
                     var patientDto = dto.Patient.Patient;
 
-                    // Prefer a stable MIS id from existing patient record.
-                    // If your "patients" list stores IdPatientMIS differently, adjust accordingly.
                     var updatePatient = new PatientDto
                     {
                         FamilyName = patientDto.FamilyName,
@@ -210,8 +221,6 @@ namespace MatrixN3HealthManager.Main
                         BirthDate = patientDto.BirthDate,
                         Sex = (byte)patientDto.Sex,
 
-                        // Use the known MIS identifier for update.
-                        // You can also fallback to findingPatient.IdPatientMIS if your flow requires it.
                         IdPatientMIS = existingPatient.IdPatientMIS,
 
                         IdGlobal = dto.PatientGlobalId,
@@ -245,9 +254,7 @@ namespace MatrixN3HealthManager.Main
                             })
                             .ToArray()
                             ?? Array.Empty<ContactDto>(),
-
-                        // This is likely the critical part for your SNILS issue:
-                        // Always push the current documents set from dto.
+                         
                         Documents = patientDto.Documents?
                             .Select(d => new DocumentDto
                             {
@@ -266,7 +273,7 @@ namespace MatrixN3HealthManager.Main
 
                     var updatedId =
                         await pixClient.UpdatePatientAndGetIdAsync(dto.ProjectGuid, dto.Idlpu, updatePatient);
-
+                    _logger.LogInformation("Patient updated with PatientGlobalId: {IdGlobal}", updatePatient.IdGlobal);
                 }
 
                 var xmlBytes = Convert.FromBase64String(dto.DataBase64);
@@ -328,10 +335,13 @@ namespace MatrixN3HealthManager.Main
 
                 await emkClient.AddMedRecordAsync(dto.ProjectGuid, dto.Idlpu, dto.PatientGlobalId, null, consultationDocument, null);
 
+                _logger.LogInformation("Medical record added successfully for PatientGlobalId: {PatientGlobalId}, IdDocumentMis: {IdDocumentMis}", dto.PatientGlobalId, documentId);
+
                 return new BaseResponse(HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while adding a medical record for PatientGlobalId: {PatientGlobalId}, IdDocumentMis: {IdDocumentMis}", dto.PatientGlobalId, dto.IdDocumentMis);
                 return new BaseResponse(HttpStatusCode.BadRequest, ExceptionStatus.error, ex.Message);
             }
         }
