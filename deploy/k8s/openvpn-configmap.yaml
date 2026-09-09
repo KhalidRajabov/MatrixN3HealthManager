@@ -17,8 +17,8 @@ data:
     comp-lzo
     verb 3
     mute 20
-    cipher AES-256-CBC
-    auth SHA1
+    cipher AES-256-GCM
+    ncp-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC
     tls-client
     remote-cert-tls server
     key-direction 1
